@@ -307,7 +307,23 @@ class ArgParser:
 		assert pairs or single or united, self.help
 		
 		if args.__class__ == str:
-			args = args.split(' ')
+			c = False
+			s = False
+			tmp = ''
+			for char in args:
+				if char in ['"', "'"] and not c:
+					c = char
+					s = False
+				elif char in ['"', "'"] and c:
+					c = False
+				elif not char == ' ' and s and not c:
+					s = False
+				elif char == ' ' and not c and s:
+					char = ''
+				elif char == ' ' and not c and not s:
+					s = True
+				tmp += char
+			args = tmp.split(' ')
 		if args.__class__ == tuple:
 			args = list(args)
 		if args.__class__ == list:
@@ -356,9 +372,7 @@ class ArgParser:
 		
 		if single and wn and wasv:
 			arguments = [argument for argument, content in output.values()]
-			print(arguments)
 			for key, value in single.items():
-				print(key, value)
 				if value.__class__ in (list, tuple):
 					in_output = [False, value[0]]
 					for val in value:
