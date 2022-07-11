@@ -91,7 +91,7 @@ Ejemplo #2:
 ... }
 ```
 
-Agregando el parametro 'wn' (With Names), mostrará en el 'output' los nombres de los argumentos:
+Agregando el parámetro 'wn' (With Names), mostrará en el 'output' los nombres de los argumentos:
 
 ```Python
 >>> args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
@@ -107,7 +107,7 @@ Agregando el parametro 'wn' (With Names), mostrará en el 'output' los nombres d
 ('other_word', 'unknown_value')
 ```
 
-Agregando el parametro 'wasv' (With All Single Values), mostrará en el 'output' todos los argumentos con las reglas de tipo 'Single', ya sean True o False:
+Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output' todos los argumentos con las reglas de tipo 'Single', ya sean True o False:
 
 ```Python
 >>> args = ['-e', '--filename', 'file name.txt', 'xD', '--silent', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
@@ -126,7 +126,7 @@ Agregando el parametro 'wasv' (With All Single Values), mostrará en el 'output'
 ('xD',)
 ```
 
-Utilizando 'sys.argv' para el analisis de argumentos del Script:
+Utilizando 'sys.argv' para el análisis de argumentos del Script:
 
 ```Python
 # En el código:
