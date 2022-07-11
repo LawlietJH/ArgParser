@@ -91,6 +91,8 @@ Ejemplo #2:
 ... }
 ```
 
+Agregando el parametro 'wn' (With Names), mostrará en el 'output' los nombres de los argumentos:
+
 ```Python
 >>> args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
 >>> out, ign = argParser(rules, args, wn=True)
@@ -105,9 +107,11 @@ Ejemplo #2:
 ('other_word', 'unknown_value')
 ```
 
+Agregando el parametro 'wasv' (With All Single Values), mostrará en el 'output' todos los argumentos con las reglas de tipo 'Single', ya sean True o False:
+
 ```Python
 >>> args = ['-e', '--filename', 'file name.txt', 'xD', '--silent', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
->>> out, ign = argParser(rules, args, wasv=False, wn=True)
+>>> out, ign = argParser(rules, args, wasv=True, wn=True)
 >>> out
 {
     'Encode':   ('-e', True),
@@ -115,7 +119,8 @@ Ejemplo #2:
     'Silent':   ('--silent', True),
     'Title':    ('-t', 'Hola Mundo!'),
     'Wordlist': ('-w', 'wordlist'),
-    'Output':   ('-o', 'output.txt')
+    'Output':   ('-o', 'output.txt'),
+    'EOF':      ('EOF', False)
 }
 >>> ign
 ('xD',)
