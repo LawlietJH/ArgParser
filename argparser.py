@@ -175,26 +175,20 @@ class ArgParser:
         ignore = True
 
         for key, val in pairs.items():
+            if isinstance(val, (list, tuple)) and not arg in val:
+                continue
+            elif isinstance(val, str) and not arg == val:
+                continue
 
-            if val.__class__ in [list, tuple]:
-                if arg in val:
-                    if wn and not key in output:
-                        output[key] = (arg, args.pop(0))
-                    elif not arg in output:
-                        output[arg] = args.pop(0)
-                    ignore = False
+            if isinstance(val, (list, tuple, str)):
+                if wn and not key in output:
+                    output[key] = (arg, args.pop(0))
+                elif wn and key in output:
                     break
-            elif val.__class__ == str:
-                if arg == val:
-                    try:
-                        if wn and not key in output:
-                            output[key] = (arg, args.pop(0))
-                        elif not arg in output:
-                            output[arg] = args.pop(0)
-                    except:
-                        break
-                    ignore = False
-                    break
+                elif not arg in output:
+                    output[arg] = args.pop(0)
+                ignore = False
+                break
 
         return ignore
 
@@ -364,7 +358,7 @@ class ArgParser:
             arg = args.pop(0)
             ignore = True
 
-            if pairs:  # Validate Pairs: -Arg Value
+            if pairs and args:  # Validate Pairs: -Arg Value
                 ignore = self.pairs_vals(arg, args, pairs, output, wn)
 
             if not ignore:
