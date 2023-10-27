@@ -23,18 +23,11 @@ class ArgParser:
         def __init__(self, error_msg=''): self.error_msg = error_msg
         def __str__(self): return repr(self.error_msg)
 
-    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None,
-                 wasv: Optional[bool] = False, wn: Optional[bool] = False):
-        """
-        rules: Rules for parsing arguments.
-        args:  Arguments to parse.
-        wasv:  Output with all single values (true and false).
-        wn:    Output with names. example: {'Name': ('argument', 'value')}.
-        """
+    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None):
+        """ rules: Rules for parsing arguments.
+            args:  Arguments to parse. """
         self.rules = rules
         self.args = args
-        self.wasv = wasv
-        self.wn = wn
         self.help = '''Example...\n
 		\r rules = {
 		\r     'pairs':  {  # 'arg value'               # Use:
@@ -57,27 +50,26 @@ class ArgParser:
 		\r }
 		'''
 
-    def _set_args(self, rules, args, wasv, wn):
-
-        if not self.rules and not rules:
-            raise self.MissingArgument(
-                "El argumento 'rules' es obligatorio.")
+    def _set_args(self, args, rules, wasv, keys):
 
         if not self.args and not args:
             raise self.MissingArgument(
-                "El argumento 'args' es obligatorio.")
+                "El argumento 'args' es necesario.")
 
-        assert isinstance(rules, dict),  self.help
-        assert isinstance(args, (tuple, list, str))
+        if not self.rules and not rules:
+            raise self.MissingArgument(
+                "El argumento 'rules' es necesario.")
 
-        self.rules = rules
-        self.args = args
+        if args:
+            assert isinstance(args, (tuple, list, str))
+            self.args = args
 
-        if not self.wasv and wasv:
-            self.wasv = True
+        if rules:
+            assert isinstance(rules, dict),  self.help
+            self.rules = rules
 
-        if not self.wn and wn:
-            self.wn = wn
+        self.wasv = wasv
+        self.keys = keys
 
     def pairs_union(self, args):
         # Union of params with '=' or ':'
@@ -173,14 +165,14 @@ class ArgParser:
 
         return args
 
-    def pairs_vals(self, arg, args, pairs, output, wn):
+    def pairs_vals(self, arg, args, pairs, output):
         for key, val in pairs.items():
             if not arg in val and not arg == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if wn and not key in output:
+                if self.keys and not key in output:
                     output[key] = (arg, args.pop(0))
-                elif (wn and key in output) or key in self.keys_used:
+                elif (self.keys and key in output) or key in self.keys_used:
                     return True
                 elif not arg in output:
                     output[arg] = args.pop(0)
@@ -188,14 +180,14 @@ class ArgParser:
                 return False
         return True
 
-    def single_vals(self, arg, single, output, wn):
+    def single_vals(self, arg, single, output):
         for key, val in single.items():
             if not arg in val and not arg == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if wn and not key in output:
+                if self.keys and not key in output:
                     output[key] = (arg, True)
-                elif (wn and key in output) or key in self.keys_used:
+                elif (self.keys and key in output) or key in self.keys_used:
                     return True
                 elif not arg in output:
                     output[arg] = True
@@ -203,7 +195,7 @@ class ArgParser:
                 return False
         return True
 
-    def united_vals(self, arg, united, output, ignored, wn):
+    def united_vals(self, arg, united, output, ignored):
         tmp_arg = arg.split(':')
 
         if len(tmp_arg) != 2:
@@ -216,9 +208,9 @@ class ArgParser:
             if not tmp_arg[0] in val and not tmp_arg[0] == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if wn and not key in output:
+                if self.keys and not key in output:
                     output[key] = (tmp_arg[0], tmp_arg[1])
-                elif (wn and key in output) or key in self.keys_used:
+                elif (self.keys and key in output) or key in self.keys_used:
                     return True
                 elif not tmp_arg[0] in output:
                     output[tmp_arg[0]] = tmp_arg[1]
@@ -280,7 +272,7 @@ class ArgParser:
         return tmp
 
     def _set_wasv(self, single: dict, output: dict):
-        if self.wn:
+        if self.keys:
             arguments = [argument for argument, _ in output.values()]
             for key, value in single.items():
                 if isinstance(value, (list, tuple)):
@@ -307,26 +299,29 @@ class ArgParser:
             elif not value in output:
                 output[value] = False
 
-    def parser(self, rules: Optional[dict] = None, args: Optional[str | list] = None,
-               wasv: Optional[bool] = False, wn: Optional[bool] = False):
+    def parser(self, args: Optional[str | list] = None, rules: Optional[dict] = None,
+               wasv: Optional[bool] = False, keys: Optional[bool] = False):
+        """ args:  Arguments to parse.
+            rules: Rules for parsing arguments.
+            wasv:  Output with all single values (true and false).
+            keys:  Output with key names. Example: {'Key': ('argument', 'value')}. """
 
-        self._set_args(rules, args, wasv, wn)
+        self._set_args(args, rules, wasv, keys)
 
+        args = self.args[:]
         self.keys_used = []
         ignored = []
         output = {}
 
-        pairs = rules.get('pairs')
-        single = rules.get('single')
-        united = rules.get('united')
+        pairs = self.rules.get('pairs')
+        single = self.rules.get('single')
+        united = self.rules.get('united')
 
         assert pairs or single or united, self.help
 
         if isinstance(args, tuple):
             args = list(args)
         elif isinstance(args, list):
-            # while '' in args:
-            # args.remove('')
             tmp = []
             for arg in args:
                 if ' ' in arg and not ('="' in arg or "='" in arg) and \
@@ -366,17 +361,17 @@ class ArgParser:
             ignore = True
 
             if pairs and args:  # Validate Pairs: -Arg Value
-                ignore = self.pairs_vals(arg, args, pairs, output, wn)
+                ignore = self.pairs_vals(arg, args, pairs, output)
                 if not ignore:
                     continue
 
             if single:  # Validate Single: -Arg
-                ignore = self.single_vals(arg, single, output, wn)
+                ignore = self.single_vals(arg, single, output)
                 if not ignore:
                     continue
 
             if united:  # Validate United: -Arg = Value, -Arg: Value
-                ignore = self.united_vals(arg, united, output, ignored, wn)
+                ignore = self.united_vals(arg, united, output, ignored)
                 if not ignore:
                     continue
 
@@ -387,7 +382,7 @@ class ArgParser:
 
         # Reset params:
         self.wasv = False
-        self.wn = False
+        self.keys = False
 
         # Output Values with Arguments and Values Ignored.
         return output, tuple(ignored)
