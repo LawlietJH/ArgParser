@@ -1,17 +1,19 @@
 # Tested in: Python 3.11.0
 # By: LawlietJH
-# ArgParser v1.0.2
+# ArgParser v1.0.3
 # Descripción: Módulo para análisis y extracción de argumentos.
 #              Permite mediante reglas obtener valores de los argumentos.
 #              Permite analizar una cadena o una lista/tupla de
 #              argumentos (como 'sys.argv' así directamente).
+# TODO: Implementar funcionalidad de Auto Generación de help. Extensión de rules.
+# TODO: Implementar selección de Argumentos Obligatorios. Extensión de rules.
 
 from typing import Optional
 
 # =======================================================================
 __author__ = 'LawlietJH'   # Desarrollador
 __title__ = 'ArgParser'    # Nombre
-__version__ = 'v1.0.2'     # Version
+__version__ = 'v1.0.3'     # Version
 # =======================================================================
 
 
@@ -214,12 +216,14 @@ class ArgParser:
             if not tmp_arg[0] in val and not tmp_arg[0] == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if tmp_arg[0] in val:
-                    if wn and not key in output:
-                        output[key] = (tmp_arg[0], tmp_arg[1])
-                    elif not tmp_arg[0] in output:
-                        output[tmp_arg[0]] = tmp_arg[1]
-                    return False
+                if wn and not key in output:
+                    output[key] = (tmp_arg[0], tmp_arg[1])
+                elif (wn and key in output) or key in self.keys_used:
+                    return True
+                elif not tmp_arg[0] in output:
+                    output[tmp_arg[0]] = tmp_arg[1]
+                    self.keys_used.append(key)
+                return False
         return True
 
     def strings_parser(self, args):
