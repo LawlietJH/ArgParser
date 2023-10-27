@@ -62,7 +62,7 @@ class TestArgParser:
         excpected_ignoreds = ('asdfg',)
         args = '-i file.txt reduce -o: output.txt asdfg'
 
-        arguments, ignoreds = self.arg_parser.parser(self.rules_1, args)
+        arguments, ignoreds = self.arg_parser.parser(args, self.rules_1)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -76,7 +76,7 @@ class TestArgParser:
         excpected_ignoreds = ()
         args = '-w wordlist -xn = xD -a -dn="A B C values"'
 
-        arguments, ignoreds = self.arg_parser.parser(self.rules_1, args)
+        arguments, ignoreds = self.arg_parser.parser(args)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -91,7 +91,7 @@ class TestArgParser:
         args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_2, args, wn=True)
+            self.arg_parser.parser(args, self.rules_2, keys=True)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -107,7 +107,7 @@ class TestArgParser:
         args = ['-w', 'wordlist', '-xn', '=',
                 'xD', '-a', '-dn=', 'A B C values']
 
-        arguments, ignoreds = self.arg_parser.parser(self.rules_1, args)
+        arguments, ignoreds = self.arg_parser.parser(args, self.rules_1)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -124,7 +124,7 @@ class TestArgParser:
                 '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_2, args, wasv=False, wn=True)
+            self.arg_parser.parser(args, self.rules_2, wasv=False, keys=True)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -143,13 +143,13 @@ class TestArgParser:
                 '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_2, args, wasv=True, wn=True)
+            self.arg_parser.parser(args, wasv=True, keys=True)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_3, sys.argv)
+            self.arg_parser.parser(sys.argv, self.rules_3)
 
         assert isinstance(arguments, dict)
         assert isinstance(ignoreds, tuple)
@@ -164,7 +164,7 @@ class TestArgParser:
                 '-jwt', 'asdasd', '--token', 'asdasd']
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_3, args, wn=True)
+            self.arg_parser.parser(args, self.rules_3, keys=True)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -174,7 +174,7 @@ class TestArgParser:
         }
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_3, args)
+            self.arg_parser.parser(args)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -182,7 +182,7 @@ class TestArgParser:
         args = '-t asdasdasd -jwt asd -jwt asdasd --token asdasd'
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_3, args)
+            self.arg_parser.parser(args)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -196,7 +196,7 @@ class TestArgParser:
         args = '-t -jwt -jwt --token'
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_4, args)
+            self.arg_parser.parser(args, self.rules_4)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -208,7 +208,26 @@ class TestArgParser:
         args = '--token asdasd -jwt asd -jwt -t xD'
 
         arguments, ignoreds = \
-            self.arg_parser.parser(self.rules_4, args)
+            self.arg_parser.parser(args)
+
+        assert arguments == expected_arguments
+        assert ignoreds == excpected_ignoreds
+
+        arguments, ignoreds = self.arg_parser.parser()
+
+        assert arguments == expected_arguments
+        assert ignoreds == excpected_ignoreds
+
+    def test_arguments_parser_class_rules(self):
+        self._settings()
+        arg_parser = ArgParser(self.rules_4)
+        expected_arguments = {
+            '--token': True
+        }
+        excpected_ignoreds = ('asdasd', '-jwt', 'asd', '-jwt', '-t', 'xD')
+        args = '--token asdasd -jwt asd -jwt -t xD'
+
+        arguments, ignoreds = arg_parser.parser(args)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
