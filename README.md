@@ -1,7 +1,7 @@
 # ArgParser
  Módulo para análisis y extracción de argumentos. Permite mediante reglas obtener valores de los argumentos. Permite analizar una cadena o una lista/tupla de argumentos (como 'sys.argv' así directamente).
 
-## v1.0.2
+## v1.0.3
 
 Debes crear un diccionario de reglas. Debe contener al menos 1 de los 3 tipos de reglas permitidas, cada tipo de regla contendrá los nombres de los argumentos. 
 
@@ -17,13 +17,12 @@ Además:
 * Si existe uno o más argumentos con la misma regla, solo se tomará en cuenta la primera coincidencia.
 * Es posible utilizar más de una regla para un mismo tipo de argumento. Esto es, agregando la misma regla a más de uno de los 3 tipos de reglas, de esta forma, podría ser válido, por ejemplo: '-w wordlist' y '-w = wordlist'.
 
-## Ejemplos de Uso:
+## Ejemplos de Uso
 
-Creando tus propias reglas, Ejemplo:
+Creando tus propias reglas, Ejemplo: Se las podemos pasar a la clase para crear las reglas.
 
 ```Python
 >>> from argparser import ArgParser
->>> arg_parser = ArgParser()
 >>> rules = {
 ...     'pairs':  {                             # Use:
 ...         'Arg 1': ['-i', '--input'],         # -i value, --input value
@@ -43,11 +42,12 @@ Creando tus propias reglas, Ejemplo:
 ...                                             # (-w alternative value to -w in 'pairs' rules)
 ...     }
 ... }
+>>> arg_parser = ArgParser(rules)
 ```
 
 ```Python
 >>> args = '-i file.txt reduce -o: output.txt asdfg'
->>> out, ign = arg_parser.parser(rules, args)
+>>> out, ign = arg_parser.parser(args)
 >>> out    # Output Values with Arguments
 {'-i': 'file.txt', 'reduce': True, '-o': 'output.txt'}
 >>> ign    # Values Ignored
@@ -56,7 +56,7 @@ Creando tus propias reglas, Ejemplo:
 
 ```Python
 >>> args = '-w wordlist -xn = xD -a -dn="A B C values"'
->>> out, ign = arg_parser.parser(rules, args)
+>>> out, ign = arg_parser.parser(args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
 >>> ign
@@ -66,7 +66,7 @@ Creando tus propias reglas, Ejemplo:
 ```Python
 >>> # Same example but with a list of arguments
 >>> args = ['-w', 'wordlist', '-xn', '=', 'xD', '-a', '-dn=', 'A B C values']
->>> out, ign = arg_parser.parser(rules, args)
+>>> out, ign = arg_parser.parser(args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
 >>> ign
@@ -91,11 +91,13 @@ Ejemplo #2:
 ... }
 ```
 
-Agregando el parámetro 'wn' (With Names), mostrará en el 'output' los nombres de los argumentos:
+Nota: para actualizar las reglas, se las podemos pasar como un segundo parámetro a la función `parser()`.
+
+Agregando el parámetro 'keys' (With Keys), mostrará en el 'output' los nombres de los argumentos:
 
 ```Python
 >>> args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
->>> out, ign = arg_parser.parser(rules, args, wn=True)
+>>> out, ign = arg_parser.parser(args, rules=rules, keys=True)
 >>> out
 {
     'Filename': ('--filename', 'file name.txt'),
@@ -111,8 +113,8 @@ Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output
 
 ```Python
 >>> args = ['-e', '--filename', 'file name.txt', 'xD', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
->>> out1, ign1 = arg_parser.parser(rules, args, wasv=False, wn=True)
->>> out2, ign2 = arg_parser.parser(rules, args, wasv=True, wn=True)
+>>> out1, ign1 = arg_parser.parser(args, wasv=False, keys=True)
+>>> out2, ign2 = arg_parser.parser(args, wasv=True, keys=True)
 >>> out1
 {
     'Encode':   ('-e', True),
@@ -137,12 +139,14 @@ Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output
 ('xD',)
 ```
 
+Podemos crear la clase sin reglas, pero al utilizar la función `parser()` habrá que actualizar obligatoriamente las reglas utilizando la primera vez un segundo parámetro llamado `rules`.
 Utilizando 'sys.argv' para el análisis de argumentos del Script:
 
 ```Python
 # En el código:
 import sys
 from argparser import ArgParser
+
 arg_parser = ArgParser()
 rules = {
     'pairs':  {
@@ -150,7 +154,8 @@ rules = {
         'Output':   ['-o', '--output']
     }
 }
-out, ign = arg_parser.parser(rules, sys.argv)
+out, ign = arg_parser.parser(sys.argv, rules)
+
 print(out)
 print(ign)
 ```
