@@ -42,8 +42,8 @@ class TestArgParser:
             }
         }
         self.rules_3 = {
-            'single': {
-                'xD': 'xD'
+            'pairs': {
+                'JWT': ['--jwt', '--token', '-t', '-jwt']
             }
         }
 
@@ -129,3 +129,47 @@ class TestArgParser:
 
         assert isinstance(arguments, dict)
         assert isinstance(ignoreds, tuple)
+
+    def test_arguments_parser_repeated_1(self):
+        self._settings()
+        expected_arguments = {
+            'JWT': ('-t', 'asdasdasd')
+        }
+        excpected_ignoreds = ('-jwt', 'asd', '-jwt', 'asdasd', '--token', 'asdasd')
+        args = ['-t', 'asdasdasd', '-jwt', 'asd',
+                '-jwt', 'asdasd', '--token', 'asdasd']
+
+        arguments, ignoreds = \
+            self.arg_parser.parser(self.rules_3, args, wasv=False, wn=True)
+
+        assert arguments == expected_arguments
+        assert ignoreds == excpected_ignoreds
+
+    def test_arguments_parser_repeated_2(self):
+        self._settings()
+        expected_arguments = {
+            '-t': 'asdasdasd'
+        }
+        excpected_ignoreds = ('-jwt', 'asd', '-jwt', 'asdasd', '--token', 'asdasd')
+        args = ['-t', 'asdasdasd', '-jwt', 'asd',
+                '-jwt', 'asdasd', '--token', 'asdasd']
+
+        arguments, ignoreds = \
+            self.arg_parser.parser(self.rules_3, args, wasv=False)
+
+        assert arguments == expected_arguments
+        assert ignoreds == excpected_ignoreds
+
+    def test_arguments_parser_repeated_3(self):
+        self._settings()
+        expected_arguments = {
+            '-t': 'asdasdasd'
+        }
+        excpected_ignoreds = ('-jwt', 'asd', '-jwt', 'asdasd', '--token', 'asdasd')
+        args = '-t asdasdasd -jwt asd -jwt asdasd --token asdasd'
+
+        arguments, ignoreds = \
+            self.arg_parser.parser(self.rules_3, args, wasv=False)
+
+        assert arguments == expected_arguments
+        assert ignoreds == excpected_ignoreds

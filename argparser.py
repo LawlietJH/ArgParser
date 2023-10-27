@@ -172,25 +172,21 @@ class ArgParser:
         return args
 
     def pairs_vals(self, arg, args, pairs, output, wn):
-        ignore = True
-
         for key, val in pairs.items():
             if isinstance(val, (list, tuple)) and not arg in val:
                 continue
             elif isinstance(val, str) and not arg == val:
                 continue
-
             if isinstance(val, (list, tuple, str)):
                 if wn and not key in output:
                     output[key] = (arg, args.pop(0))
-                elif wn and key in output:
-                    break
+                elif (wn and key in output) or key in self.keys_used:
+                    return True
                 elif not arg in output:
                     output[arg] = args.pop(0)
-                ignore = False
-                break
-
-        return ignore
+                    self.keys_used.append(key)
+                return False
+        return True
 
     def single_vals(self, arg, single, output, wn):
         ignore = True
@@ -353,6 +349,8 @@ class ArgParser:
         assert isinstance(args, list), f'args = {args} is not valid.'
 
         args = self.pairs_union(args)
+
+        self.keys_used = []
 
         while args:
             arg = args.pop(0)
