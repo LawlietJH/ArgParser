@@ -124,7 +124,7 @@ class TestArgParser:
                 '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
 
         arguments, ignoreds = \
-            self.arg_parser.parser(args, self.rules_2, wasv=False, keys=True)
+            self.arg_parser.parser(args, self.rules_2, keys=True, wasv=False)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds
@@ -143,7 +143,7 @@ class TestArgParser:
                 '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
 
         arguments, ignoreds = \
-            self.arg_parser.parser(args, wasv=True, keys=True)
+            self.arg_parser.parser(args, keys=True, wasv=True)
 
         assert arguments == expected_arguments
         assert ignoreds == excpected_ignoreds

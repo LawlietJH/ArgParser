@@ -195,14 +195,12 @@ class ArgParser:
                 return False
         return True
 
-    def united_vals(self, arg, united, output, ignored):
+    def united_vals(self, arg, united, output):
         tmp_arg = arg.split(':')
-
         if len(tmp_arg) != 2:
             tmp_arg = tmp_arg[0].split('=')
             if len(tmp_arg) != 2:
-                ignored.append(arg)
-                return False
+                return True
 
         for key, val in united.items():
             if not tmp_arg[0] in val and not tmp_arg[0] == val:
@@ -300,11 +298,11 @@ class ArgParser:
                 output[value] = False
 
     def parser(self, args: Optional[str | list] = None, rules: Optional[dict] = None,
-               wasv: Optional[bool] = False, keys: Optional[bool] = False):
+               keys: Optional[bool] = False, wasv: Optional[bool] = False):
         """ args:  Arguments to parse.
             rules: Rules for parsing arguments.
-            wasv:  Output with all single values (true and false).
-            keys:  Output with key names. Example: {'Key': ('argument', 'value')}. """
+            keys:  Output with key names. Example: {'Key': ('argument', 'value')}.
+            wasv:  Output with all single values (True and False). """
 
         self._set_args(args, rules, wasv, keys)
 
@@ -358,7 +356,6 @@ class ArgParser:
 
         while args:
             arg = args.pop(0)
-            ignore = True
 
             if pairs and args:  # Validate Pairs: -Arg Value
                 ignore = self.pairs_vals(arg, args, pairs, output)
@@ -371,7 +368,7 @@ class ArgParser:
                     continue
 
             if united:  # Validate United: -Arg = Value, -Arg: Value
-                ignore = self.united_vals(arg, united, output, ignored)
+                ignore = self.united_vals(arg, united, output)
                 if not ignore:
                     continue
 
