@@ -1,7 +1,7 @@
 # ArgParser
  Módulo para análisis y extracción de argumentos. Permite mediante reglas obtener valores de los argumentos. Permite analizar una cadena o una lista/tupla de argumentos (como 'sys.argv' así directamente).
 
-## v1.0.1
+## v1.0.2
 
 Debes crear un diccionario de reglas. Debe contener al menos 1 de los 3 tipos de reglas permitidas, cada tipo de regla contendrá los nombres de los argumentos. 
 
@@ -23,7 +23,7 @@ Creando tus propias reglas, Ejemplo:
 
 ```Python
 >>> from argparser import ArgParser
->>> argParser = ArgParser()
+>>> arg_parser = ArgParser()
 >>> rules = {
 ...     'pairs':  {                             # Use:
 ...         'Arg 1': ['-i', '--input'],         # -i value, --input value
@@ -47,7 +47,7 @@ Creando tus propias reglas, Ejemplo:
 
 ```Python
 >>> args = '-i file.txt reduce -o: output.txt asdfg'
->>> out, ign = argParser(rules, args)
+>>> out, ign = arg_parser.parser(rules, args)
 >>> out    # Output Values with Arguments
 {'-i': 'file.txt', 'reduce': True, '-o': 'output.txt'}
 >>> ign    # Values Ignored
@@ -56,7 +56,7 @@ Creando tus propias reglas, Ejemplo:
 
 ```Python
 >>> args = '-w wordlist -xn = xD -a -dn="A B C values"'
->>> out, ign = argParser(rules, args)
+>>> out, ign = arg_parser.parser(rules, args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
 >>> ign
@@ -66,7 +66,7 @@ Creando tus propias reglas, Ejemplo:
 ```Python
 >>> # Same example but with a list of arguments
 >>> args = ['-w', 'wordlist', '-xn', '=', 'xD', '-a', '-dn=', 'A B C values']
->>> out, ign = argParser(rules, args)
+>>> out, ign = arg_parser.parser(rules, args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
 >>> ign
@@ -83,11 +83,11 @@ Ejemplo #2:
 ...         'Title':     '-t',
 ...         'Wordlist': ('-w', '--wordlist')
 ...     },
-...     'single': { # Take only True or False values
+...     'single': { # The arguments are considered boolean values. True if the argument exists, otherwise False.
 ...         'Encode': ['-e', 'encode'],
 ...         'EOF':     'EOF',
 ...         'Silent': ['-s', '--silent', 's', 'silent']
-...     }
+...     } # Use the 'wasv' parameter to get False values.
 ... }
 ```
 
@@ -95,7 +95,7 @@ Agregando el parámetro 'wn' (With Names), mostrará en el 'output' los nombres 
 
 ```Python
 >>> args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
->>> out, ign = argParser(rules, args, wn=True)
+>>> out, ign = arg_parser.parser(rules, args, wn=True)
 >>> out
 {
     'Filename': ('--filename', 'file name.txt'),
@@ -110,19 +110,30 @@ Agregando el parámetro 'wn' (With Names), mostrará en el 'output' los nombres 
 Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output' todos los argumentos con las reglas de tipo 'Single', ya sean True o False:
 
 ```Python
->>> args = ['-e', '--filename', 'file name.txt', 'xD', '--silent', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
->>> out, ign = argParser(rules, args, wasv=True, wn=True)
->>> out
+>>> args = ['-e', '--filename', 'file name.txt', 'xD', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
+>>> out1, ign1 = arg_parser.parser(rules, args, wasv=False, wn=True)
+>>> out2, ign2 = arg_parser.parser(rules, args, wasv=True, wn=True)
+>>> out1
 {
     'Encode':   ('-e', True),
     'Filename': ('--filename', 'file name.txt'),
-    'Silent':   ('--silent', True),
+    'Title':    ('-t', 'Hola Mundo!'),
+    'Wordlist': ('-w', 'wordlist'),
+    'Output':   ('-o', 'output.txt')
+}
+>>> ign1
+('xD',)
+>>> out2
+{
+    'Encode':   ('-e', True),
+    'Filename': ('--filename', 'file name.txt'),
     'Title':    ('-t', 'Hola Mundo!'),
     'Wordlist': ('-w', 'wordlist'),
     'Output':   ('-o', 'output.txt'),
-    'EOF':      ('EOF', False)
+    'EOF':      ('EOF', False),
+    'Silent':   ('-s', False)
 }
->>> ign
+>>> ign2
 ('xD',)
 ```
 
@@ -132,14 +143,14 @@ Utilizando 'sys.argv' para el análisis de argumentos del Script:
 # En el código:
 import sys
 from argparser import ArgParser
-argParser = ArgParser()
+arg_parser = ArgParser()
 rules = {
     'pairs':  {
         'Filename': ['-f', '--filename'],
         'Output':   ['-o', '--output']
     }
 }
-out, ign = argParser(rules, sys.argv)
+out, ign = arg_parser.parser(rules, sys.argv)
 print(out)
 print(ign)
 ```

@@ -1,6 +1,6 @@
 # Tested in: Python 3.11.0
 # By: LawlietJH
-# ArgParser v1.0.1
+# ArgParser v1.0.2
 # Descripción: Módulo para análisis y extracción de argumentos.
 #              Permite mediante reglas obtener valores de los argumentos.
 #              Permite analizar una cadena o una lista/tupla de
@@ -11,7 +11,7 @@ from typing import Optional
 # =======================================================================
 __author__ = 'LawlietJH'   # Desarrollador
 __title__ = 'ArgParser'    # Nombre
-__version__ = 'v1.0.1'     # Version
+__version__ = 'v1.0.2'     # Version
 # =======================================================================
 
 
@@ -173,9 +173,7 @@ class ArgParser:
 
     def pairs_vals(self, arg, args, pairs, output, wn):
         for key, val in pairs.items():
-            if isinstance(val, (list, tuple)) and not arg in val:
-                continue
-            elif isinstance(val, str) and not arg == val:
+            if not arg in val and not arg == val:
                 continue
             if isinstance(val, (list, tuple, str)):
                 if wn and not key in output:
@@ -189,28 +187,19 @@ class ArgParser:
         return True
 
     def single_vals(self, arg, single, output, wn):
-        ignore = True
-
         for key, val in single.items():
-
-            if val.__class__ in [list, tuple]:
-                if arg in val:
-                    if wn:
-                        output[key] = (arg, True)
-                    else:
-                        output[arg] = True
-                    ignore = False
-                    break
-            elif val.__class__ == str:
-                if arg == val:
-                    if wn:
-                        output[key] = (arg, True)
-                    else:
-                        output[arg] = True
-                    ignore = False
-                    break
-
-        return ignore
+            if not arg in val and not arg == val:
+                continue
+            if isinstance(val, (list, tuple, str)):
+                if wn and not key in output:
+                    output[key] = (arg, True)
+                elif (wn and key in output) or key in self.keys_used:
+                    return True
+                elif not arg in output:
+                    output[arg] = True
+                    self.keys_used.append(key)
+                return False
+        return True
 
     def united_vals(self, arg, united, output, ignored, wn):
         tmp_arg = arg.split(':')
@@ -219,30 +208,19 @@ class ArgParser:
             tmp_arg = tmp_arg[0].split('=')
             if len(tmp_arg) != 2:
                 ignored.append(arg)
-                return 'continue'
-
-        ignore = True
+                return False
 
         for key, val in united.items():
-
-            if val.__class__ in [list, tuple]:
+            if not tmp_arg[0] in val and not tmp_arg[0] == val:
+                continue
+            if isinstance(val, (list, tuple, str)):
                 if tmp_arg[0] in val:
                     if wn and not key in output:
                         output[key] = (tmp_arg[0], tmp_arg[1])
                     elif not tmp_arg[0] in output:
                         output[tmp_arg[0]] = tmp_arg[1]
-                    ignore = False
-                    break
-            elif val.__class__ == str:
-                if tmp_arg[0] == val:
-                    if wn and not key in output:
-                        output[key] = (tmp_arg[0], tmp_arg[1])
-                    elif not tmp_arg[0] in output:
-                        output[tmp_arg[0]] = tmp_arg[1]
-                    ignore = False
-                    break
-
-        return ignore
+                    return False
+        return True
 
     def strings_parser(self, args):
         tmp = []
@@ -297,11 +275,40 @@ class ArgParser:
                 tmp.append(arg)
         return tmp
 
+    def _set_wasv(self, single: dict, output: dict):
+        if self.wn:
+            arguments = [argument for argument, _ in output.values()]
+            for key, value in single.items():
+                if isinstance(value, (list, tuple)):
+                    in_output = [False, value[0]]
+                    for val in value:
+                        if val in arguments:
+                            in_output = [True, val]
+                            break
+                    if not in_output[0]:
+                        output[key] = (in_output[1], False)
+                elif not key in arguments:
+                    output[key] = (value, False)
+            return
+
+        for value in single.values():
+            if isinstance(value, (list, tuple)):
+                in_output = [False, value[0]]
+                for val in value:
+                    if val in output:
+                        in_output = [True, val]
+                        break
+                if not in_output[0]:
+                    output[in_output[1]] = False
+            elif not value in output:
+                output[value] = False
+
     def parser(self, rules: Optional[dict] = None, args: Optional[str | list] = None,
                wasv: Optional[bool] = False, wn: Optional[bool] = False):
 
         self._set_args(rules, args, wasv, wn)
 
+        self.keys_used = []
         ignored = []
         output = {}
 
@@ -346,11 +353,9 @@ class ArgParser:
 
         args = self.strings_parser(args)
 
-        assert isinstance(args, list), f'args = {args} is not valid.'
+        assert isinstance(args, list), f"args = {args} is not valid."
 
         args = self.pairs_union(args)
-
-        self.keys_used = []
 
         while args:
             arg = args.pop(0)
@@ -358,50 +363,23 @@ class ArgParser:
 
             if pairs and args:  # Validate Pairs: -Arg Value
                 ignore = self.pairs_vals(arg, args, pairs, output, wn)
-
-            if not ignore:
-                continue
+                if not ignore:
+                    continue
 
             if single:  # Validate Single: -Arg
                 ignore = self.single_vals(arg, single, output, wn)
-
-            if not ignore:
-                continue
+                if not ignore:
+                    continue
 
             if united:  # Validate United: -Arg = Value, -Arg: Value
-                ignore = self.united_vals(
-                    arg, united, output, ignored, wn)
-
-            if ignore == 'continue' or not ignore:
-                continue
+                ignore = self.united_vals(arg, united, output, ignored, wn)
+                if not ignore:
+                    continue
 
             ignored.append(arg)
 
-        if single and wn and wasv:
-            arguments = [argument for argument, content in output.values()]
-            for key, value in single.items():
-                if value.__class__ in (list, tuple):
-                    in_output = [False, value[0]]
-                    for val in value:
-                        if val in arguments:
-                            in_output = [True, val]
-                            break
-                    if not in_output[0]:
-                        output[key] = (in_output[1], False)
-                elif not key in arguments:
-                    output[key] = (value, False)
-        elif single and not wn and wasv:
-            for value in single.values():
-                if value.__class__ in (list, tuple):
-                    in_output = [False, value[0]]
-                    for val in value:
-                        if val in output:
-                            in_output = [True, val]
-                            break
-                    if not in_output[0]:
-                        output[in_output[1]] = False
-                elif not value in output:
-                    output[value] = False
+        if wasv and single:
+            self._set_wasv(single, output)
 
         # Reset params:
         self.wasv = False
