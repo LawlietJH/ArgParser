@@ -1,7 +1,7 @@
 # ArgParser
  Módulo para análisis y extracción de argumentos. Permite mediante reglas obtener valores de los argumentos. Permite analizar una cadena o una lista/tupla de argumentos (como 'sys.argv' así directamente).
 
-## v1.0.0
+## v1.0.1
 
 Debes crear un diccionario de reglas. Debe contener al menos 1 de los 3 tipos de reglas permitidas, cada tipo de regla contendrá los nombres de los argumentos. 
 
