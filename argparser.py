@@ -28,6 +28,9 @@ class ArgParser:
             args:  Arguments to parse. """
         self.rules = rules
         self.args = args
+        self.keys = False
+        self.wasv = False
+        self.ignored = False
         self.help = '''Example...\n
 		\r rules = {
 		\r     'pairs':  {  # 'arg value'               # Use:
@@ -68,9 +71,14 @@ class ArgParser:
             assert isinstance(rules, dict),  self.help
             self.rules = rules
 
-        self.wasv = wasv
-        self.keys = keys
-        self.ignored = ignored
+        if isinstance(wasv, bool):
+            self.wasv = wasv
+
+        if isinstance(keys, bool):
+            self.keys = keys
+
+        if isinstance(ignored, bool):
+            self.ignored = ignored
 
     def pairs_union(self, args):
         # Union of params with '=' or ':'
@@ -217,7 +225,7 @@ class ArgParser:
                 return False
         return True
 
-    def strings_parser(self, args):
+    def strings_parser(self, args) -> list[str]:
         tmp = []
         init = False
         char = ''
@@ -270,7 +278,7 @@ class ArgParser:
                 tmp.append(arg)
         return tmp
 
-    def _set_wasv(self, single: dict, output: dict):
+    def _set_wasv(self, single: dict, output: dict) -> None:
         if self.keys:
             arguments = [argument for argument, _ in output.values()]
             for key, value in single.items():
@@ -300,7 +308,7 @@ class ArgParser:
 
     def parser(self, args: Optional[str | list] = None, rules: Optional[dict] = None,
                keys: Optional[bool] = False, wasv: Optional[bool] = False,
-               ignored: Optional[bool] = False):
+               ignored: Optional[bool] = False) -> dict | tuple[dict, tuple]:
         """ args:    Arguments to parse.
             rules:   Rules for parsing arguments.
             keys:    Output with key names. Example: {'Key': ('argument', 'value')}.
@@ -380,12 +388,9 @@ class ArgParser:
         if wasv and single:
             self._set_wasv(single, output)
 
-        # Reset params:
-        self.wasv = False
-        self.keys = False
-
-        if ignored:
+        if self.ignored:
             # Output Values with Arguments and Ignored Values.
             return output, tuple(ignored_values)
+
         # Output Argument Values
         return output
