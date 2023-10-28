@@ -20,10 +20,10 @@ __version__ = 'v1.0.3'     # Version
 class ArgParser:
 
     class MissingArgument(Exception):
-        def __init__(self, error_msg=''): self.error_msg = error_msg
+        def __init__(self, error_msg: str = ''): self.error_msg = error_msg
         def __str__(self): return repr(self.error_msg)
 
-    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None):
+    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None) -> None:
         """ rules: Rules for parsing arguments.
             args:  Arguments to parse. """
         self.rules = rules
@@ -53,7 +53,8 @@ class ArgParser:
 		\r }
 		'''
 
-    def _set_args(self, args, rules, wasv, keys, ignored):
+    def _set_args(self, args: tuple | list | str, rules: dict,
+                  wasv: bool, keys: bool, ignored: bool) -> None:
 
         if not self.args and not args:
             raise self.MissingArgument(
@@ -80,7 +81,7 @@ class ArgParser:
         if isinstance(ignored, bool):
             self.ignored = ignored
 
-    def pairs_union(self, args):
+    def pairs_union(self, args: list) -> list:
         # Union of params with '=' or ':'
         tmp = []
         concat = ''
@@ -174,7 +175,7 @@ class ArgParser:
 
         return args
 
-    def pairs_vals(self, arg, args, pairs, output):
+    def pairs_vals(self, arg: str, args: list, pairs: dict, output: dict) -> bool:
         for key, val in pairs.items():
             if not arg in val and not arg == val:
                 continue
@@ -189,7 +190,7 @@ class ArgParser:
                 return False
         return True
 
-    def single_vals(self, arg, single, output):
+    def single_vals(self, arg: str, single: dict, output: dict) -> bool:
         for key, val in single.items():
             if not arg in val and not arg == val:
                 continue
@@ -204,7 +205,7 @@ class ArgParser:
                 return False
         return True
 
-    def united_vals(self, arg, united, output):
+    def united_vals(self, arg: str, united: dict, output: dict) -> bool:
         tmp_arg = arg.split(':')
         if len(tmp_arg) != 2:
             tmp_arg = tmp_arg[0].split('=')
@@ -225,7 +226,7 @@ class ArgParser:
                 return False
         return True
 
-    def strings_parser(self, args) -> list[str]:
+    def strings_parser(self, args: list) -> list[str]:
         tmp = []
         init = False
         char = ''
@@ -322,9 +323,9 @@ class ArgParser:
         ignored_values = []
         output = {}
 
-        pairs = self.rules.get('pairs')
-        single = self.rules.get('single')
-        united = self.rules.get('united')
+        pairs: dict = self.rules.get('pairs')
+        single: dict = self.rules.get('single')
+        united: dict = self.rules.get('united')
 
         assert pairs or single or united, self.help
 
