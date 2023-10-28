@@ -45,32 +45,30 @@ Creando tus propias reglas, Ejemplo: Se las podemos pasar a la clase para crear 
 >>> arg_parser = ArgParser(rules)
 ```
 
+El parámetro `ignored` nos permite recibir una tupla con los argumentos ignorados por las reglas.
+
 ```Python
 >>> args = '-i file.txt reduce -o: output.txt asdfg'
->>> out, ign = arg_parser.parser(args)
->>> out    # Output Values with Arguments
+>>> out, ign = arg_parser.parser(args, ignored=True)
+>>> out    # Output with argument values
 {'-i': 'file.txt', 'reduce': True, '-o': 'output.txt'}
->>> ign    # Values Ignored
+>>> ign    # Ignored values
 ('asdfg',)
 ```
 
 ```Python
 >>> args = '-w wordlist -xn = xD -a -dn="A B C values"'
->>> out, ign = arg_parser.parser(args)
+>>> out = arg_parser.parser(args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
->>> ign
-()
 ```
 
 ```Python
 >>> # Same example but with a list of arguments
 >>> args = ['-w', 'wordlist', '-xn', '=', 'xD', '-a', '-dn=', 'A B C values']
->>> out, ign = arg_parser.parser(args)
+>>> out = arg_parser.parser(args)
 >>> out
 {'-w': 'wordlist', '-xn': 'xD', '-a': True, '-dn': 'A B C values'}
->>> ign
-()
 ```
 
 Ejemplo #2:
@@ -97,7 +95,7 @@ Agregando el parámetro 'keys' (With Keys), mostrará en el 'output' los nombres
 
 ```Python
 >>> args = '--filename "file name.txt" EOF other_word -t "Hola Mundo!" -o output.txt unknown_value'
->>> out, ign = arg_parser.parser(args, rules=rules, keys=True)
+>>> out, ign = arg_parser.parser(args, rules=rules, keys=True, ignored=True)
 >>> out
 {
     'Filename': ('--filename', 'file name.txt'),
@@ -113,8 +111,8 @@ Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output
 
 ```Python
 >>> args = ['-e', '--filename', 'file name.txt', 'xD', '-t', 'Hola Mundo!', '-w', 'wordlist', '-o', 'output.txt']
->>> out1, ign1 = arg_parser.parser(args, wasv=False, keys=True)
->>> out2, ign2 = arg_parser.parser(args, wasv=True, keys=True)
+>>> out1 = arg_parser.parser(args, keys=True, wasv=False)
+>>> out2 = arg_parser.parser(args, keys=True, wasv=True)
 >>> out1
 {
     'Encode':   ('-e', True),
@@ -123,8 +121,6 @@ Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output
     'Wordlist': ('-w', 'wordlist'),
     'Output':   ('-o', 'output.txt')
 }
->>> ign1
-('xD',)
 >>> out2
 {
     'Encode':   ('-e', True),
@@ -135,8 +131,6 @@ Agregando el parámetro 'wasv' (With All Single Values), mostrará en el 'output
     'EOF':      ('EOF', False),
     'Silent':   ('-s', False)
 }
->>> ign2
-('xD',)
 ```
 
 Podemos crear la clase sin reglas, pero al utilizar la función `parser()` habrá que actualizar obligatoriamente las reglas utilizando la primera vez un segundo parámetro llamado `rules`.
@@ -154,7 +148,7 @@ rules = {
         'Output':   ['-o', '--output']
     }
 }
-out, ign = arg_parser.parser(sys.argv, rules)
+out, ign = arg_parser.parser(sys.argv, rules, ignored=True)
 
 print(out)
 print(ign)
