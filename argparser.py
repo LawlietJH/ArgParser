@@ -1,38 +1,36 @@
 # Tested in: Python 3.11.0
 # By: LawlietJH
-# ArgParser v1.0.2
+# ArgParser v1.0.3
 # Descripción: Módulo para análisis y extracción de argumentos.
 #              Permite mediante reglas obtener valores de los argumentos.
 #              Permite analizar una cadena o una lista/tupla de
 #              argumentos (como 'sys.argv' así directamente).
+# TODO: Implementar funcionalidad de Auto Generación de help. Extensión de rules.
+# TODO: Implementar selección de Argumentos Obligatorios. Extensión de rules.
 
 from typing import Optional
 
 # =======================================================================
 __author__ = 'LawlietJH'   # Desarrollador
 __title__ = 'ArgParser'    # Nombre
-__version__ = 'v1.0.2'     # Version
+__version__ = 'v1.0.3'     # Version
 # =======================================================================
 
 
 class ArgParser:
 
     class MissingArgument(Exception):
-        def __init__(self, error_msg=''): self.error_msg = error_msg
+        def __init__(self, error_msg: str = ''): self.error_msg = error_msg
         def __str__(self): return repr(self.error_msg)
 
-    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None,
-                 wasv: Optional[bool] = False, wn: Optional[bool] = False):
-        """
-        rules: Rules for parsing arguments.
-        args:  Arguments to parse.
-        wasv:  Output with all single values (true and false).
-        wn:    Output with names. example: {'Name': ('argument', 'value')}.
-        """
+    def __init__(self, rules: Optional[dict] = None, args: Optional[str | list] = None) -> None:
+        """ rules: Rules for parsing arguments.
+            args:  Arguments to parse. """
         self.rules = rules
         self.args = args
-        self.wasv = wasv
-        self.wn = wn
+        self.keys = False
+        self.wasv = False
+        self.ignored = False
         self.help = '''Example...\n
 		\r rules = {
 		\r     'pairs':  {  # 'arg value'               # Use:
@@ -55,29 +53,35 @@ class ArgParser:
 		\r }
 		'''
 
-    def _set_args(self, rules, args, wasv, wn):
-
-        if not self.rules and not rules:
-            raise self.MissingArgument(
-                "El argumento 'rules' es obligatorio.")
+    def _set_args(self, args: tuple | list | str, rules: dict,
+                  wasv: bool, keys: bool, ignored: bool) -> None:
 
         if not self.args and not args:
             raise self.MissingArgument(
-                "El argumento 'args' es obligatorio.")
+                "El argumento 'args' es necesario.")
 
-        assert isinstance(rules, dict),  self.help
-        assert isinstance(args, (tuple, list, str))
+        if not self.rules and not rules:
+            raise self.MissingArgument(
+                "El argumento 'rules' es necesario.")
 
-        self.rules = rules
-        self.args = args
+        if args:
+            assert isinstance(args, (tuple, list, str))
+            self.args = args
 
-        if not self.wasv and wasv:
-            self.wasv = True
+        if rules:
+            assert isinstance(rules, dict),  self.help
+            self.rules = rules
 
-        if not self.wn and wn:
-            self.wn = wn
+        if isinstance(wasv, bool):
+            self.wasv = wasv
 
-    def pairs_union(self, args):
+        if isinstance(keys, bool):
+            self.keys = keys
+
+        if isinstance(ignored, bool):
+            self.ignored = ignored
+
+    def pairs_union(self, args: list) -> list:
         # Union of params with '=' or ':'
         tmp = []
         concat = ''
@@ -171,14 +175,14 @@ class ArgParser:
 
         return args
 
-    def pairs_vals(self, arg, args, pairs, output, wn):
+    def pairs_vals(self, arg: str, args: list, pairs: dict, output: dict) -> bool:
         for key, val in pairs.items():
             if not arg in val and not arg == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if wn and not key in output:
+                if self.keys and not key in output:
                     output[key] = (arg, args.pop(0))
-                elif (wn and key in output) or key in self.keys_used:
+                elif (self.keys and key in output) or key in self.keys_used:
                     return True
                 elif not arg in output:
                     output[arg] = args.pop(0)
@@ -186,14 +190,14 @@ class ArgParser:
                 return False
         return True
 
-    def single_vals(self, arg, single, output, wn):
+    def single_vals(self, arg: str, single: dict, output: dict) -> bool:
         for key, val in single.items():
             if not arg in val and not arg == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if wn and not key in output:
+                if self.keys and not key in output:
                     output[key] = (arg, True)
-                elif (wn and key in output) or key in self.keys_used:
+                elif (self.keys and key in output) or key in self.keys_used:
                     return True
                 elif not arg in output:
                     output[arg] = True
@@ -201,28 +205,28 @@ class ArgParser:
                 return False
         return True
 
-    def united_vals(self, arg, united, output, ignored, wn):
+    def united_vals(self, arg: str, united: dict, output: dict) -> bool:
         tmp_arg = arg.split(':')
-
         if len(tmp_arg) != 2:
             tmp_arg = tmp_arg[0].split('=')
             if len(tmp_arg) != 2:
-                ignored.append(arg)
-                return False
+                return True
 
         for key, val in united.items():
             if not tmp_arg[0] in val and not tmp_arg[0] == val:
                 continue
             if isinstance(val, (list, tuple, str)):
-                if tmp_arg[0] in val:
-                    if wn and not key in output:
-                        output[key] = (tmp_arg[0], tmp_arg[1])
-                    elif not tmp_arg[0] in output:
-                        output[tmp_arg[0]] = tmp_arg[1]
-                    return False
+                if self.keys and not key in output:
+                    output[key] = (tmp_arg[0], tmp_arg[1])
+                elif (self.keys and key in output) or key in self.keys_used:
+                    return True
+                elif not tmp_arg[0] in output:
+                    output[tmp_arg[0]] = tmp_arg[1]
+                    self.keys_used.append(key)
+                return False
         return True
 
-    def strings_parser(self, args):
+    def strings_parser(self, args: list) -> list[str]:
         tmp = []
         init = False
         char = ''
@@ -275,8 +279,8 @@ class ArgParser:
                 tmp.append(arg)
         return tmp
 
-    def _set_wasv(self, single: dict, output: dict):
-        if self.wn:
+    def _set_wasv(self, single: dict, output: dict) -> None:
+        if self.keys:
             arguments = [argument for argument, _ in output.values()]
             for key, value in single.items():
                 if isinstance(value, (list, tuple)):
@@ -303,26 +307,31 @@ class ArgParser:
             elif not value in output:
                 output[value] = False
 
-    def parser(self, rules: Optional[dict] = None, args: Optional[str | list] = None,
-               wasv: Optional[bool] = False, wn: Optional[bool] = False):
+    def parser(self, args: Optional[str | list] = None, rules: Optional[dict] = None,
+               keys: Optional[bool] = False, wasv: Optional[bool] = False,
+               ignored: Optional[bool] = False) -> dict | tuple[dict, tuple]:
+        """ args:    Arguments to parse.
+            rules:   Rules for parsing arguments.
+            keys:    Output with key names. Example: {'Key': ('argument', 'value')}.
+            wasv:    Output with all single values (True and False).
+            ignored: Get two output values: Parsed arguments & Ignored arguments. """
 
-        self._set_args(rules, args, wasv, wn)
+        self._set_args(args, rules, wasv, keys, ignored)
 
+        args = self.args[:]
         self.keys_used = []
-        ignored = []
+        ignored_values = []
         output = {}
 
-        pairs = rules.get('pairs')
-        single = rules.get('single')
-        united = rules.get('united')
+        pairs: dict = self.rules.get('pairs')
+        single: dict = self.rules.get('single')
+        united: dict = self.rules.get('united')
 
         assert pairs or single or united, self.help
 
         if isinstance(args, tuple):
             args = list(args)
         elif isinstance(args, list):
-            # while '' in args:
-            # args.remove('')
             tmp = []
             for arg in args:
                 if ' ' in arg and not ('="' in arg or "='" in arg) and \
@@ -359,31 +368,30 @@ class ArgParser:
 
         while args:
             arg = args.pop(0)
-            ignore = True
 
             if pairs and args:  # Validate Pairs: -Arg Value
-                ignore = self.pairs_vals(arg, args, pairs, output, wn)
+                ignore = self.pairs_vals(arg, args, pairs, output)
                 if not ignore:
                     continue
 
             if single:  # Validate Single: -Arg
-                ignore = self.single_vals(arg, single, output, wn)
+                ignore = self.single_vals(arg, single, output)
                 if not ignore:
                     continue
 
             if united:  # Validate United: -Arg = Value, -Arg: Value
-                ignore = self.united_vals(arg, united, output, ignored, wn)
+                ignore = self.united_vals(arg, united, output)
                 if not ignore:
                     continue
 
-            ignored.append(arg)
+            ignored_values.append(arg)
 
         if wasv and single:
             self._set_wasv(single, output)
 
-        # Reset params:
-        self.wasv = False
-        self.wn = False
+        if self.ignored:
+            # Output Values with Arguments and Ignored Values.
+            return output, tuple(ignored_values)
 
-        # Output Values with Arguments and Values Ignored.
-        return output, tuple(ignored)
+        # Output Argument Values
+        return output
