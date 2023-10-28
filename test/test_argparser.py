@@ -8,24 +8,18 @@ class TestArgParser:
     def _settings(self):
         self.arg_parser = ArgParser()
         self.rules_1 = {
-            'pairs':  {                             # Use:
-                'Arg 1': ['-i', '--input'],         # -i value, --input value
-                'Arg 2': '-r',                      # -r value
-                'Wordlist': '-w'                    # -w value
+            'pairs':  { # Key Value                  # Use examples:
+                'Key 1': ['-i', '--input'],          # -i value, --input value
+                'Key 2': '-r',                       # -r value, -r = value, -r value
+                'Key 3': ('-o', '--output'),         # -o=value, --output:value
+                'Key 4': '-dn',                      # -dn= value, -dn value, -dn =value
+                'Key 5': ['-xn', '-xname', 'xn'],    # -xn: value, -xname = value, xn : value
+                'Key 6': '-w'                        # -w value, -w=value, -w:value, -w :value
             },
-            'single': {  # Take only True or False values
-                'Arg 3': ['-n', '--name'],          # -n, --name
-                'Arg 4': '-a',                      # -a
-                'Arg 5': 'reduce'                   # val
-            },
-            'united': {
-                # -vn=value, --valname:value
-                'Arg 6': ('-o', '--output'),
-                'Arg 7': '-dn',                     # -dn= value
-                # -xn: value, -xname = value, xn : value
-                'Arg 8': ['-xn', '-xname', 'xn'],
-                'Wordlist': '-w'                    # -w = value
-                # (-w alternative value to -w in 'pairs' rules)
+            'single': { # Bool
+                'Key 7': ['-n', '--name'],          # -n, --name
+                'Key 8': '-a',                      # -a
+                'Key 9': 'reduce'                   # val
             }
         }
         self.rules_2 = {
