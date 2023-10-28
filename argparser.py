@@ -13,7 +13,7 @@ from typing import Optional
 # =======================================================================
 __author__ = 'LawlietJH'   # Desarrollador
 __title__ = 'ArgParser'    # Nombre
-__version__ = 'v1.0.3'     # Version
+__version__ = 'v1.0.4'     # Version
 # =======================================================================
 
 
@@ -31,24 +31,20 @@ class ArgParser:
         self.keys = False
         self.wasv = False
         self.ignored = False
-        self.help = '''Example...\n
+        self.help = '''\n
 		\r rules = {
-		\r     'pairs':  {  # 'arg value'               # Use:
-		\r         'Name 1': ['-e', '--example'],       # -e value, --example value
-		\r         'Name 2': '-o',                      # -o value
-		\r         'Wordlist': '-w'                     # -w value
+		\r     'pairs':  { # Key Value                  # Use examples:
+		\r         'Key 1': ['-i', '--input'],          # -i value, --input value
+		\r         'Key 2': '-r',                       # -r value, -r = value, -r: value
+		\r         'Key 3': ('-o', '--output'),         # -o=value, --output:value
+		\r         'Key 4': '-dn',                      # -dn= value, -dn value, -dn =value
+		\r         'Key 5': ['-xn', '-xname', 'xn'],    # -xn: value, -xname = value, xn : value
+		\r         'Key 6': '-w'                        # -w value, -w=value, -w:value, -w :value
 		\r     },
-		\r     'single': {  # 'arg'
-		\r         'Name 3': ['-n', '--name'],          # -n, --name
-		\r         'Name 4': '-a',                      # -a
-		\r         'Name 5': 'val'                      # val
-		\r     },
-		\r     'united': {  # 'arg = value' or 'arg: value'
-		\r         'Name 6': ('-vn', '--valuename'),    # -vn=value, --valname:value
-		\r         'Name 7': '-dn',                     # -dn= value
-		\r         'Name 8': ['-xn', '-xname', 'xn'],   # -xn: value, -xname = value, xn : value
-		\r         'Wordlist': '-w'                     # -w: value
-		\r                                              # (-w alternative value to -w in 'pairs' rules)
+		\r     'single': { # Bool
+		\r         'Key 7': ['-n', '--name'],           # -n, --name
+		\r         'Key 8': '-a',                       # -a
+		\r         'Key 9': 'val'                       # val
 		\r     }
 		\r }
 		'''
@@ -176,6 +172,20 @@ class ArgParser:
         return args
 
     def pairs_vals(self, arg: str, args: list, pairs: dict, output: dict) -> bool:
+
+        # Pairs united:
+        if ':' in arg or '=' in arg:
+            tmp_arg = arg.split(':')
+            if len(tmp_arg) != 2:
+                tmp_arg = tmp_arg[0].split('=')
+                if len(tmp_arg) != 2:
+                    return True
+            arg = tmp_arg[0]
+            args.insert(0, tmp_arg[1])
+
+        if not args:
+            return True
+
         for key, val in pairs.items():
             if not arg in val and not arg == val:
                 continue
@@ -201,27 +211,6 @@ class ArgParser:
                     return True
                 elif not arg in output:
                     output[arg] = True
-                    self.keys_used.append(key)
-                return False
-        return True
-
-    def united_vals(self, arg: str, united: dict, output: dict) -> bool:
-        tmp_arg = arg.split(':')
-        if len(tmp_arg) != 2:
-            tmp_arg = tmp_arg[0].split('=')
-            if len(tmp_arg) != 2:
-                return True
-
-        for key, val in united.items():
-            if not tmp_arg[0] in val and not tmp_arg[0] == val:
-                continue
-            if isinstance(val, (list, tuple, str)):
-                if self.keys and not key in output:
-                    output[key] = (tmp_arg[0], tmp_arg[1])
-                elif (self.keys and key in output) or key in self.keys_used:
-                    return True
-                elif not tmp_arg[0] in output:
-                    output[tmp_arg[0]] = tmp_arg[1]
                     self.keys_used.append(key)
                 return False
         return True
@@ -325,9 +314,8 @@ class ArgParser:
 
         pairs: dict = self.rules.get('pairs')
         single: dict = self.rules.get('single')
-        united: dict = self.rules.get('united')
 
-        assert pairs or single or united, self.help
+        assert pairs or single, self.help
 
         if isinstance(args, tuple):
             args = list(args)
@@ -369,18 +357,13 @@ class ArgParser:
         while args:
             arg = args.pop(0)
 
-            if pairs and args:  # Validate Pairs: -Arg Value
+            if pairs:  # Validate Pairs (key value): -Arg Value
                 ignore = self.pairs_vals(arg, args, pairs, output)
                 if not ignore:
                     continue
 
-            if single:  # Validate Single: -Arg
+            if single:  # Validate Single (bool): -Arg
                 ignore = self.single_vals(arg, single, output)
-                if not ignore:
-                    continue
-
-            if united:  # Validate United: -Arg = Value, -Arg: Value
-                ignore = self.united_vals(arg, united, output)
                 if not ignore:
                     continue
 
