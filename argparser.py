@@ -50,7 +50,7 @@ class ArgParser:
 		\r }
 		'''
 
-    def _set_args(self, args, rules, wasv, keys):
+    def _set_args(self, args, rules, wasv, keys, ignored):
 
         if not self.args and not args:
             raise self.MissingArgument(
@@ -70,6 +70,7 @@ class ArgParser:
 
         self.wasv = wasv
         self.keys = keys
+        self.ignored = ignored
 
     def pairs_union(self, args):
         # Union of params with '=' or ':'
@@ -298,17 +299,19 @@ class ArgParser:
                 output[value] = False
 
     def parser(self, args: Optional[str | list] = None, rules: Optional[dict] = None,
-               keys: Optional[bool] = False, wasv: Optional[bool] = False):
-        """ args:  Arguments to parse.
-            rules: Rules for parsing arguments.
-            keys:  Output with key names. Example: {'Key': ('argument', 'value')}.
-            wasv:  Output with all single values (True and False). """
+               keys: Optional[bool] = False, wasv: Optional[bool] = False,
+               ignored: Optional[bool] = False):
+        """ args:    Arguments to parse.
+            rules:   Rules for parsing arguments.
+            keys:    Output with key names. Example: {'Key': ('argument', 'value')}.
+            wasv:    Output with all single values (True and False).
+            ignored: Get two output values: Parsed arguments & Ignored arguments. """
 
-        self._set_args(args, rules, wasv, keys)
+        self._set_args(args, rules, wasv, keys, ignored)
 
         args = self.args[:]
         self.keys_used = []
-        ignored = []
+        ignored_values = []
         output = {}
 
         pairs = self.rules.get('pairs')
@@ -372,7 +375,7 @@ class ArgParser:
                 if not ignore:
                     continue
 
-            ignored.append(arg)
+            ignored_values.append(arg)
 
         if wasv and single:
             self._set_wasv(single, output)
@@ -381,5 +384,8 @@ class ArgParser:
         self.wasv = False
         self.keys = False
 
-        # Output Values with Arguments and Values Ignored.
-        return output, tuple(ignored)
+        if ignored:
+            # Output Values with Arguments and Ignored Values.
+            return output, tuple(ignored_values)
+        # Output Argument Values
+        return output
